@@ -1,0 +1,26 @@
+name: Generar APK Android
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar archivos
+        uses: actions/checkout@v4
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Android
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y android-sdk
+
+      - name: Mostrar archivos
+        run: ls -la
