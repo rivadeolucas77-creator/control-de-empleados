@@ -1,20 +1,4 @@
-
-name: Generar APK Android
-
-on:
-workflow_dispatch:
-push:
-branches: [main]
-
-jobs:
-build:
-runs-on: ubuntu-latest
-
-steps:
-  - name: Descargar proyecto
-    uses: actions/checkout@v4
-
-  - name: Configurar Java
+- name: Configurar Java
     uses: actions/setup-java@v4
     with:
       distribution: temurin
