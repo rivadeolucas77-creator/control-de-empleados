@@ -1,47 +1,17 @@
+- name: Descargar proyecto
+    uses: actions/checkout@v4
 
-name: Generar APK Android
+  - name: Configurar Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
 
-on:
-  workflow_dispatch:
+  - name: Preparar Android
+    uses: android-actions/setup-android@v3
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Descargar proyecto
-        uses: actions/checkout@v4
-
-      - name: Instalar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Instalar Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Crear proyecto Android
-        run: |
-          mkdir app
-          cd app
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Control de empleados" "com.controldeempleados.app" --web-dir www
-          mkdir www
-          cp ../index.html www/index.html
-          npx cap add android
-
-      - name: Generar APK
-        run: |
-          cd app/android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Guardar APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Control-de-empleados-APK
-          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+  - name: Generar APK
+    run: |
+      mkdir -p output
+      echo "Preparando compilacion"
+      ls -la
