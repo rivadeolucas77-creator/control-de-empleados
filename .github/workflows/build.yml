@@ -7,46 +7,18 @@ workflow_dispatch:
 jobs:
 build:
 runs-on: ubuntu-latest
-steps:
-- name: Descargar proyecto
-uses: actions/checkout@v4
 
-  - name: Configurar Java
-    uses: actions/setup-java@v4
-    with:
-      distribution: temurin
-      java-version: '17'
+    steps:
+      - name: Descargar proyecto
+        uses: actions/checkout@v4
 
-  - name: Instalar Node
-    uses: actions/setup-node@v4
-    with:
-      node-version: '20'
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-  - name: Preparar proyecto
-    run: |
-      npm install -g @capacitor/cli
-      mkdir -p android-app/www
-      cp index.html android-app/www/
-      for f in *.css *.js; do
-        if [ -f "$f" ]; then cp "$f" android-app/www/; fi
-      done
-      cd android-app
-      npm init -y
-      npm install @capacitor/core @capacitor/android
-      npx cap init "Control de empleados" "com.controldeempleados.app" --web-dir www
-      npx cap add android
-
-  - name: Compilar APK
-    run: |
-      cd android-app
-      npm install
-      npx cap sync android
-      cd android
-      chmod +x gradlew
-      ./gradlew assembleDebug
-
-  - name: Guardar APK
-    uses: actions/upload-artifact@v4
-    with:
-      name: Control-de-empleados-APK
-      path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
