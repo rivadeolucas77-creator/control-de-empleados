@@ -1,14 +1,23 @@
-- name: Configurar Java
+name: Generar APK Android
+
+on:
+workflow_dispatch:
+
+jobs:
+build:
+runs-on: ubuntu-latest
+
+steps:
+  - name: Descargar proyecto
+    uses: actions/checkout@v4
+
+  - name: Configurar Java
     uses: actions/setup-java@v4
     with:
       distribution: temurin
       java-version: '17'
 
-  - name: Configurar Android SDK
-    uses: android-actions/setup-android@v3
-
-  - name: Instalar herramientas Android
-    run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-
-  - name: Compilar APK
-    run: gradle assembleDebug
+  - name: Instalar Node
+    uses: actions/setup-node@v4
+    with:
+      node-version: '20'
