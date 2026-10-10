@@ -1,4 +1,3 @@
-
 name: Generar APK Android
 
 on:
@@ -7,6 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Descargar proyecto
         uses: actions/checkout@v4
@@ -17,7 +17,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Generar APK
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Preparar aplicación
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
