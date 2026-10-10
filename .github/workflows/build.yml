@@ -22,5 +22,24 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Preparar aplicación
+      - name: Preparar aplicación Android
         run: |
+          mkdir -p www
+          cp index.html www/
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap init "Control de empleados" "com.controldeempleados.app" --web-dir www
+          npx cap add android
+
+      - name: Compilar APK
+        run: |
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Control-de-empleados-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
