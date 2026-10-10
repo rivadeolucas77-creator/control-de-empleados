@@ -1,10 +1,148 @@
-steps:
-  - name: Descargar proyecto
-    uses: actions/checkout@v4
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1f6feb">
+<title>Control de empleados</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#17202a}
+header{background:#1f6feb;color:white;padding:20px 16px;border-radius:0 0 22px 22px}
+h1{font-size:23px;margin:0 0 6px}.date{opacity:.9}
+main{padding:16px;max-width:700px;margin:auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card,.panel{background:white;border-radius:16px;padding:16px;box-shadow:0 2px 8px #00000012}
+.card{cursor:pointer}.icon{font-size:28px}.card b{display:block;margin-top:8px}.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}
+.stat{text-align:center}.stat strong{display:block;font-size:25px}
+button,select,input,textarea{font:inherit}button{border:0;border-radius:12px;padding:12px 15px;background:#1f6feb;color:white;font-weight:bold;cursor:pointer}
+.secondary{background:#e9eef5;color:#17202a}.danger{background:#d93025}.row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:10px 0}
+.task{padding:12px;border:1px solid #e1e5ea;border-radius:12px;margin:8px 0}.done{text-decoration:line-through;opacity:.6}
+input,select,textarea{width:100%;padding:11px;border:1px solid #ccd3da;border-radius:10px;margin:6px 0 12px}
+.hidden{display:none}.back{margin-bottom:12px}.photo{max-width:100%;border-radius:12px;margin-top:8px}
+.notice{padding:12px;border-radius:12px;background:#fff4d6;margin:10px 0}.ok{background:#e7f6ea}.alert{background:#fde9e7}
+.small{font-size:13px;color:#667}
+</style>
+</head>
+<body>
+<header>
+  <h1>📋 Control de empleados</h1>
+  <div class="date" id="today"></div>
+</header>
+<main id="app"></main>
 
-  - name: Construir APK
-    uses: cemcoe/web-to-apk-action@v1
-    with:
-      app_name: "Control de empleados"
-      app_id: "com.controldeempleados.app"
-      web_dir: "."
+<script>
+const app=document.getElementById('app');
+const KEY='controlEmpleadosV1';
+let db=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ employees:[{id:1,name:'Empleado 1'},{id:2,name:'Empleado 2'},{id:3,name:'Empleado 3'},{id:4,name:'Empleado 4'},{id:5,name:'Empleado 5'},{id:6,name:'Empleado 6'}],
+ tasks:[
+  {id:1,name:'Reposición de fiambres',sector:'Fiambrería',photo:false,temp:false},
+  {id:2,name:'Exhibición de fiambres',sector:'Fiambrería',photo:true,temp:false},
+  {id:3,name:'Exhibición de quesos',sector:'Fiambrería',photo:true,temp:false},
+  {id:4,name:'Exhibición de batea',sector:'Fiambrería',photo:true,temp:false},
+  {id:5,name:'Reposición de refrigerados',sector:'Refrigerados',photo:false,temp:false},
+  {id:6,name:'Exhibición de refrigerados',sector:'Refrigerados',photo:true,temp:false},
+  {id:7,name:'Reposición de congelados',sector:'Congelados',photo:false,temp:false},
+  {id:8,name:'Exhibición de congelados',sector:'Congelados',photo:true,temp:false},
+  {id:9,name:'Limpieza general',sector:'Limpieza',photo:false,temp:false},
+  {id:10,name:'Limpieza del sector',sector:'Limpieza',photo:false,temp:false},
+  {id:11,name:'Cámara de frío',sector:'Temperaturas',photo:false,temp:true},
+  {id:12,name:'Cámara de congelados',sector:'Temperaturas',photo:false,temp:true},
+  {id:13,name:'Heladera',sector:'Temperaturas',photo:false,temp:true},
+  {id:14,name:'Batea',sector:'Temperaturas',photo:false,temp:true}
+ ],
+ assignments:[], attendance:[], temps:[], photos:[]
+};
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function id(){return Date.now()+Math.random()}
+function fmt(d=new Date()){return d.toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})}
+function date(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+document.getElementById('today').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+function home(){
+ const today=date(), a=db.assignments.filter(x=>x.date===today), done=a.filter(x=>x.done).length;
+ app.innerHTML=`<div class="stats">
+ <div class="panel stat"><strong>${db.employees.length}</strong>Empleados</div>
+ <div class="panel stat"><strong>${a.length}</strong>Tareas hoy</div>
+ <div class="panel stat"><strong>${done}</strong>Realizadas</div>
+ <div class="panel stat"><strong>${a.length-done}</strong>Pendientes</div></div>
+ <div class="grid">
+  <div class="card" onclick="employees()"><span class="icon">👥</span><b>Empleados</b><span class="small">Ver y controlar personal</span></div>
+  <div class="card" onclick="todayTasks()"><span class="icon">📋</span><b>Tareas de hoy</b><span class="small">Ver todas las tareas</span></div>
+  <div class="card" onclick="completedTasks()"><span class="icon">✅</span><b>Realizadas</b><span class="small">Tareas completadas</span></div>
+  <div class="card" onclick="pendingTasks()"><span class="icon">⏳</span><b>Pendientes</b><span class="small">Tareas pendientes</span></div>
+  <div class="card" onclick="assign()"><span class="icon">➕</span><b>Asignar tareas</b><span class="small">Crear nuevas tareas</span></div>
+  <div class="card" onclick="attendance()"><span class="icon">🕐</span><b>Horarios</b><span class="small">Entrada y salida</span></div>
+  <div class="card" onclick="temps()"><span class="icon">🌡️</span><b>Temperaturas</b><span class="small">Registrar controles</span></div>
+  <div class="card" onclick="historyPage()"><span class="icon">📚</span><b>Historial</b><span class="small">Consultar registros</span></div>
+  <div class="card" onclick="report()"><span class="icon">📊</span><b>Informes</b><span class="small">Resumen del trabajo</span></div>
+ </div>
+ <div class="panel" style="margin-top:12px"><b>⚠️ Pendientes de hoy</b><div id="pending"></div></div>`;
+ const p=document.getElementById('pending');
+ const pend=a.filter(x=>!x.done);
+ p.innerHTML=pend.length?pend.slice(0,8).map(x=>`<div class="notice">${emp(x.employeeId)} — ${task(x.taskId)}</div>`).join(''):'<div class="notice ok">No hay tareas pendientes.</div>';
+}
+function emp(i){return db.employees.find(x=>x.id==i)?.name||'Empleado'}
+function task(i){return db.tasks.find(x=>x.id==i)?.name||'Tarea'}
+let currentPage='home', currentEmployeeId=null;
+function shell(title,body){app.innerHTML=`<button class="secondary back" onclick="home()">← Volver</button><h2>${title}</h2>${body}`}
+
+function employees(){
+ shell('👥 Empleados',db.employees.map(e=>{
+  const a=db.assignments.filter(x=>x.employeeId==e.id&&x.date===date()), d=a.filter(x=>x.done).length;
+  return `<div class="panel" style="margin:10px 0"><div class="row"><b>${e.name}</b><span>${a.length?Math.round(d/a.length*100):0}%</span></div><div class="small">${d}/${a.length} tareas realizadas</div><button onclick="employeeDetail(${e.id})">Ver detalle</button></div>`
+ }).join('')+`<div class="panel"><input id="newEmp" placeholder="Nombre del nuevo empleado"><button onclick="addEmployee()">+ Agregar empleado</button></div>`)
+}
+function addEmployee(){let n=document.getElementById('newEmp').value.trim();if(!n)return;db.employees.push({id:id(),name:n});save();employees()}
+function employeeDetail(eid){
+ const e=emp(eid), a=db.assignments.filter(x=>x.employeeId==eid&&x.date===date());
+ shell('👤 '+e,`<div class="panel"><b>Tareas de hoy</b>${a.length?a.map(x=>`<div class="task ${x.done?'done':''}"><div>${x.done?'✅':'⬜'} ${task(x.taskId)}</div><button onclick="toggleTask(${x.id})">${x.done?'Marcar pendiente':'Marcar realizada'}</button></div>`).join(''):'<p class="small">No tiene tareas asignadas hoy.</p>'}</div>
+ <div class="panel" style="margin-top:12px"><b>Horarios</b>${db.attendance.filter(x=>x.employeeId==eid).slice(-5).reverse().map(x=>`<div class="task">${x.date} — Entrada: ${x.in||'—'} — Salida: ${x.out||'—'}</div>`).join('')||'<p class="small">Sin registros.</p>'}</div>`)
+}
+function taskList(title, filter){
+ const a=db.assignments.filter(x=>x.date===date()&&filter(x));
+ shell(title, a.length ? a.map(x=>`<div class="task ${x.done?'done':''}"><div><b>${emp(x.employeeId)}</b> — ${task(x.taskId)}</div><div class="small">${x.done?'✅ Realizada':'⏳ Pendiente'}</div><button onclick="toggleTask(${x.id})">${x.done?'Marcar pendiente':'Marcar realizada'}</button></div>`).join('') : '<div class="notice">No hay tareas en esta categoría.</div>');
+}
+function todayTasks(){taskList('📋 Tareas de hoy',()=>true)}
+function completedTasks(){taskList('✅ Tareas realizadas',x=>x.done)}
+function pendingTasks(){taskList('⏳ Tareas pendientes',x=>!x.done)}
+
+function assign(){
+ let opts=db.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+ shell('📋 Asignar tareas',`<div class="panel"><label>Empleado</label><select id="ae">${opts}</select><label>Fecha</label><input id="ad" type="date" value="${date()}"><label>Tareas</label><div>${db.tasks.map(t=>`<label style="display:block;margin:8px 0"><input style="width:auto" type="checkbox" value="${t.id}"> ${t.name} ${t.photo?'📸':''} ${t.temp?'🌡️':''}</label>`).join('')}</div><button onclick="doAssign()">Asignar seleccionadas</button></div>`)
+}
+function doAssign(){
+ const e=+document.getElementById('ae').value,d=document.getElementById('ad').value, ids=[...document.querySelectorAll('.panel input[type=checkbox]:checked')].map(x=>+x.value);
+ ids.forEach(t=>{if(!db.assignments.some(a=>a.employeeId==e&&a.taskId==t&&a.date==d))db.assignments.push({id:id(),employeeId:e,taskId:t,date:d,done:false})});
+ save(); home();
+}
+function toggleTask(i){
+ const x=db.assignments.find(a=>a.id==i); if(!x)return;
+ x.done=!x.done; x.updated=fmt(); save();
+ if(currentPage==='employeeDetail') employeeDetail(currentEmployeeId);
+ else if(currentPage==='completedTasks') completedTasks();
+ else if(currentPage==='pendingTasks') pendingTasks();
+ else if(currentPage==='todayTasks') todayTasks();
+ else home();
+}
+function attendance(){
+ let rows=db.employees.map(e=>{let x=db.attendance.find(a=>a.employeeId==e.id&&a.date==date());return `<div class="panel" style="margin:10px 0"><b>${e.name}</b><div class="small">Entrada: ${x?.in||'—'} | Salida: ${x?.out||'—'}</div><button onclick="clock(${e.id},'in')">Registrar entrada</button> <button class="secondary" onclick="clock(${e.id},'out')">Registrar salida</button></div>`}).join('');
+ shell('🕐 Entrada y salida',rows)
+}
+function clock(eid,type){let x=db.attendance.find(a=>a.employeeId==eid&&a.date==date());if(!x){x={id:id(),employeeId:eid,date:date()};db.attendance.push(x)}x[type]=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});save();attendance()}
+function temps(){
+ shell('🌡️ Temperaturas',`<div class="panel"><select id="te">${db.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('')}</select><select id="eq"><option>Cámara de frío</option><option>Cámara de congelados</option><option>Heladera</option><option>Batea</option></select><input id="tv" type="number" step="0.1" placeholder="Temperatura °C"><button onclick="saveTemp()">Guardar temperatura</button></div>
+ <div class="panel" style="margin-top:12px"><b>Últimos registros</b>${db.temps.slice(-10).reverse().map(x=>`<div class="task">${x.date} ${x.time} — ${emp(x.employeeId)} — ${x.equipment}: <b>${x.value} °C</b></div>`).join('')||'<p class="small">Sin registros.</p>'}</div>`)
+}
+function saveTemp(){const value=document.getElementById('tv').value;if(value==='')return;db.temps.push({id:id(),employeeId:+document.getElementById('te').value,equipment:document.getElementById('eq').value,value:+value,date:date(),time:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})});save();temps()}
+function historyPage(){
+ shell('📚 Historial',`<div class="panel"><label>Fecha</label><input id="hd" type="date" value="${date()}" onchange="historyPage()"></div>
+ <div>${db.assignments.filter(x=>x.date==document.getElementById('hd')?.value).map(x=>`<div class="task">${x.done?'✅':'⏳'} ${emp(x.employeeId)} — ${task(x.taskId)}</div>`).join('')||'<div class="notice">No hay tareas para esta fecha.</div>'}</div>`)
+}
+function report(){
+ let a=db.assignments.filter(x=>x.date===date()),d=a.filter(x=>x.done).length;
+ shell('📊 Informe de hoy',`<div class="panel"><h3>${new Date().toLocaleDateString('es-AR')}</h3><p>Tareas asignadas: <b>${a.length}</b></p><p>Realizadas: <b>${d}</b></p><p>Pendientes: <b>${a.length-d}</b></p><p>Cumplimiento: <b>${a.length?Math.round(d/a.length*100):0}%</b></p><button onclick="window.print()">🖨️ Imprimir / Guardar PDF</button></div>`)
+}
+home();
+</script>
+</body>
+</html>

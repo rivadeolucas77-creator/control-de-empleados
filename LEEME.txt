@@ -1,0 +1,8 @@
+CONTROL DE EMPLEADOS - PAQUETE CORREGIDO PARA GENERAR APK
+
+Incluye el index.html verdadero de la aplicación y el proyecto Android WebView.
+El flujo .github/workflows/build-apk.yml compila un APK de prueba y lo publica como artefacto descargable en GitHub Actions.
+
+IMPORTANTE: este ZIP no contiene todavía un APK compilado. Para usarlo, hay que subir estos archivos al repositorio de GitHub (reemplazando el index.html incorrecto y agregando la carpeta Control_de_empleados_Android y el workflow). Luego abrir Actions, elegir “Generar APK Android”, tocar “Run workflow” y descargar el artefacto “Control-de-empleados-APK” cuando finalice correctamente.
+
+La app guarda datos localmente en el teléfono. Esta versión todavía no incorpora captura de fotos desde Android.
