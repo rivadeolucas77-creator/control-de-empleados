@@ -1,4 +1,20 @@
-name: Generar APK Android
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar proyecto
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Generar APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
 on:
 workflow_dispatch:
